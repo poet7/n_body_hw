@@ -1,0 +1,84 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% The following lines are the preamble.  They help LaTeX set-up the document, but do not print anything yet.
+
+\documentclass{beamer}		% This tells LaTeX the document will be a "beamer" presentation
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath} 
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\usetheme{Madrid}		% Sets basic formatting.  Lots of options, google "beamer themes"
+
+\usecolortheme{dolphin}	% Sets the colour scheme.  Lots of options, google "beamer color themes"
+
+\setbeamertemplate{navigation symbols}{}	% Manually changes one piece of formatting.  See what the difference is by commenting this line out.
+
+\date{}	% Insert the date of your presentation. \today gives an unsurprising automatic date.
+
+\title[Resonance trapping]{基于神经网络求解共振俘获的发生条件}	% Insert your title.  Depending on the theme you choose above, a "short title" might be useful, as it will appear on the footer of each slide.
+
+\author[S Li]{Shihong Li} % Insert your name
+
+\institute[ZJU]{Zhejiang University} % Self-explanatory
+
+\begin{document} 	% Let's begin
+
+% Presentations come in slide frames.  You have to tell LaTeX when to start a frame, and when to end the frame.  The most common error beginners make with beamer is forgetting the \end{frame} command.	
+
+\begin{frame}	
+
+\titlepage	% Prints a title page populated with the information given in the preamble
+	
+\end{frame}		
+
+
+\begin{frame}{Outline}	% This is the start of a frame
+    \begin{itemize}
+        \item Introduction
+        \item Resonance Trapping
+        \item Numerical Simulation
+        \item Forbidden Mechanism in Spectroscopy
+    
+    
+\end{frame}
+
+\begin{frame}{误差分析}
+    \begin{itemize}
+        \item \textbf{程序最大运行时间限制:} 每次模拟设置了最大运行时间5min，超过时间的模拟将被终止。可能存在一些模拟未能完成的情况，此时判断其是否收敛检查模拟的最后几个时间步的数据。
+        
+    \end{itemize}
+
+\end{frame}
+\begin{frame}
+    \frametitle{Forbidden Mechanism in Spectroscopy}
+
+    \begin{itemize}
+        \item \textbf{Definition:} A spectral line associated with photon absorption or emission by atomic nuclei, atoms, or molecules undergoing transitions not allowed by specific selection rules.
+        
+        \item \textbf{Allowed Transitions:}
+            \begin{itemize}
+                \item Forbidden under usual approximations (e.g., electric dipole).
+                \item Allowed at higher approximation levels (e.g., magnetic dipole, electric quadrupole).
+            \end{itemize}
+        
+        \item \textbf{Transition Probabilities:}
+            \begin{itemize}
+                \item Most forbidden transitions are relatively unlikely.
+                \item Meta-stable states have lifetimes \textcolor{red}{on the order of $ms$ to $s$}.
+                \item Permitted transitions have lifetimes of \textcolor{red}{less than $1\mu s$}.
+            \end{itemize}
+        
+        \item \textbf{Astrophysical Forbidden Lines:}
+            \begin{itemize}
+                \item Forbidden lines of nitrogen ([N II] at 654.8 and 658.4 nm), sulfur ([S II] at 671.6 and 673.1 nm), and oxygen ([O II] at 372.7 nm, [O III] at 495.9 and 500.7 nm) are observed in astrophysical plasmas.
+                \item The presence of [O I] and [S II] forbidden lines in T-Tauri star spectra indicates \textcolor{red}{low gas density}.
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+    
+
+
+\end{document}	% Done!

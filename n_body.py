@@ -1,8 +1,10 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from timeout_decorator import timeout, TimeoutError
 
+@timeout(300)  # 设置超时时间为 300 秒
 def detect_resonance(v_earth, v_hw, v_angle):
-    # 固定使用的参数
+    # 固定参数
     a_earth = 2.0
     t_stop = 100
     M_jupiter = 1e-3
@@ -16,9 +18,7 @@ def detect_resonance(v_earth, v_hw, v_angle):
 
     # 初始状态向量
     vx_e = v_earth * np.cos(v_angle)
-    print(vx_e)
     vy_e = v_earth_stable + v_earth * np.sin(v_angle)
-    print(vy_e)
     y0 = [
         a_jupiter, 0.0, 0.0, v_jupiter,
         a_earth,   0.0, vx_e, vy_e
@@ -51,16 +51,41 @@ def detect_resonance(v_earth, v_hw, v_angle):
         ay_e += a_drag[1]
         return [vx_j, vy_j, ax_j, ay_j, vx_e, vy_e, ax_e, ay_e]
 
-    t_span = (0, 30000)
+    t_span = (0, 25000)
     t_eval = np.linspace(*t_span, 500)
-    sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-8, atol=1e-8, max_step=10 )
 
-    x_e, y_e = sol.y[4], sol.y[5]
-    a_e = np.sqrt(x_e**2 + y_e**2)
-    T_j = 1.0
-    T_e = a_e**1.5
-    period_ratio = T_e / T_j
+    try:
+        # 尝试解方程
+        sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-7, atol=1e-7, max_step=10)
 
+        # 提取部分或完整解
+        x_e, y_e = sol.y[4], sol.y[5]
+        a_e = np.sqrt(x_e**2 + y_e**2)
+        T_j = 1.0
+        T_e = a_e**1.5
+        period_ratio = T_e / T_j
+
+        # 检查共振
+        return _check_resonance(period_ratio)
+
+    except TimeoutError:
+        print(f"运行超时：v_earth={v_earth}, v_hw={v_hw}, v_angle={v_angle}")
+
+        # 如果超时，从已经计算的部分解中提取结果
+        if 'sol' in locals() and sol.y.size > 0:
+            x_e, y_e = sol.y[4], sol.y[5]
+            a_e = np.sqrt(x_e**2 + y_e**2)
+            T_j = 1.0
+            T_e = a_e**1.5
+            period_ratio = T_e / T_j
+
+            # 使用部分解检查共振
+            return _check_resonance(period_ratio)
+
+        # 如果没有任何解，返回 None
+        return None
+
+def _check_resonance(period_ratio):
     resonances = [2/1, 3/2, 5/3, 7/5]
     tolerance = 0.03
 
@@ -68,7 +93,12 @@ def detect_resonance(v_earth, v_hw, v_angle):
         indices = np.where(np.abs(period_ratio - res) < tolerance)[0]
         if len(indices) > 10:
             nearby = period_ratio[indices]
-            osc = np.max(nearby) - np.min(nearby)
-            if osc < 2 * tolerance:
+
+            # 检查是否非单调
+            diff = np.diff(nearby)  # 计算相邻值的差分
+            is_increasing = np.all(diff >= 0)  # 是否全递增
+            is_decreasing = np.all(diff <= 0)  # 是否全递减
+
+            if not (is_increasing or is_decreasing):  # 如果既不是递增也不是递减
                 return True
     return False
