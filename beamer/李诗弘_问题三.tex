@@ -1,5 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
 % The following lines are the preamble.  They help LaTeX set-up the document, but do not print anything yet.
 
 \documentclass{beamer}		% This tells LaTeX the document will be a "beamer" presentation
@@ -41,17 +39,19 @@
         \item Resonance Trapping
         \item Numerical Simulation
         \item Forbidden Mechanism in Spectroscopy
-    
-    
+    \end{itemize}
 \end{frame}
 
-\begin{frame}{误差分析}
+\begin{frame}{并行策略}
     \begin{itemize}
-        \item \textbf{程序最大运行时间限制:} 每次模拟设置了最大运行时间5min，超过时间的模拟将被终止。可能存在一些模拟未能完成的情况，此时判断其是否收敛检查模拟的最后几个时间步的数据。
+        \item \textbf{程序最大运行时间限制:} 每次模拟设置了最大运行时间5min，超过时间的模拟将被终止。可能存在一些模拟未能完成的情况，此时检查模拟的最后几个时间步的数据。
+        \item \textbf{采用进程级并行:} 动力学模拟需要对微分方程进行数值积分，而数值积分通常具有强顺序性，本身难以并行计算。但是不同的初值之间没有关联性，可以很容易地实现并行。
+        \item \textbf{部分初值下计算的严重超时问题:} 在部分初值设定下，能有的恶魔你情况会因为积分器的精度设定出现时间步长过短的情况。其运行时间会大大超过之前的设置上限。这时如果不及时地停止该进程的计算，可能会导致这种计算彻底占满计算资源。此时应该设计一种方法及时终止该进程。
+        \item 
         
     \end{itemize}
-
 \end{frame}
+
 \begin{frame}
     \frametitle{Forbidden Mechanism in Spectroscopy}
 

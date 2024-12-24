@@ -1,12 +1,34 @@
 import numpy as np
+import logging
+import timeout_decorator
 from scipy.integrate import solve_ivp
-from timeout_decorator import timeout, TimeoutError
 
-@timeout(300)  # 设置超时时间为 300 秒
-def detect_resonance(v_earth, v_hw, v_angle):
+class TimeoutException(Exception):
+    """自定义超时异常"""
+
+@timeout_decorator.timeout(240, timeout_exception=TimeoutException)  # 默认超时时间30秒，可自行修改
+def detect_resonance(v_earth, v_hw, v_angle, t_stop):
+    """
+    使用timeout_decorator来限制运行时间，若超时则抛出TimeoutException
+    """
+    try:
+        result = _compute_resonance(v_earth, v_hw, v_angle, t_stop)
+    except TimeoutException:
+        logging.error("计算超时")
+        # 即使超时，仍然尝试进行共振检查
+        return _check_resonance(np.array([]))  # 可以传递空的结果作为默认，避免空数据的问题
+    except Exception as e:
+        logging.error(f"计算错误: {e}")
+        return None
+    return result
+
+
+def _compute_resonance(v_earth, v_hw, v_angle, t_stop):
+    """
+    实际执行积分计算的函数
+    """
     # 固定参数
     a_earth = 2.0
-    t_stop = 100
     M_jupiter = 1e-3
 
     # 常量定义
@@ -51,41 +73,31 @@ def detect_resonance(v_earth, v_hw, v_angle):
         ay_e += a_drag[1]
         return [vx_j, vy_j, ax_j, ay_j, vx_e, vy_e, ax_e, ay_e]
 
-    t_span = (0, 25000)
+    # 积分配置
+    t_span = (0, 250000)
     t_eval = np.linspace(*t_span, 500)
+    sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-7, atol=1e-7, max_step=10)
 
-    try:
-        # 尝试解方程
-        sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-7, atol=1e-7, max_step=10)
+    result = _analyze_solution(sol)
+    print(f"v_earth={v_earth}, v_hw={v_hw}, v_angle={v_angle}, t_stop={t_stop}, result={result}")
+    return result
 
-        # 提取部分或完整解
-        x_e, y_e = sol.y[4], sol.y[5]
-        a_e = np.sqrt(x_e**2 + y_e**2)
-        T_j = 1.0
-        T_e = a_e**1.5
-        period_ratio = T_e / T_j
+def _analyze_solution(sol):
+    """
+    提取解并检查是否存在共振
+    """
+    x_e, y_e = sol.y[4], sol.y[5]
+    a_e = np.sqrt(x_e**2 + y_e**2)
+    T_j = 1.0
+    T_e = a_e**1.5
+    period_ratio = T_e / T_j
 
-        # 检查共振
-        return _check_resonance(period_ratio)
-
-    except TimeoutError:
-        print(f"运行超时：v_earth={v_earth}, v_hw={v_hw}, v_angle={v_angle}")
-
-        # 如果超时，从已经计算的部分解中提取结果
-        if 'sol' in locals() and sol.y.size > 0:
-            x_e, y_e = sol.y[4], sol.y[5]
-            a_e = np.sqrt(x_e**2 + y_e**2)
-            T_j = 1.0
-            T_e = a_e**1.5
-            period_ratio = T_e / T_j
-
-            # 使用部分解检查共振
-            return _check_resonance(period_ratio)
-
-        # 如果没有任何解，返回 None
-        return None
+    return _check_resonance(period_ratio)
 
 def _check_resonance(period_ratio):
+    """
+    检查周期比是否满足共振条件
+    """
     resonances = [2/1, 3/2, 5/3, 7/5]
     tolerance = 0.03
 
@@ -95,9 +107,9 @@ def _check_resonance(period_ratio):
             nearby = period_ratio[indices]
 
             # 检查是否非单调
-            diff = np.diff(nearby)  # 计算相邻值的差分
-            is_increasing = np.all(diff >= 0)  # 是否全递增
-            is_decreasing = np.all(diff <= 0)  # 是否全递减
+            diff = np.diff(nearby)
+            is_increasing = np.all(diff >= 0)
+            is_decreasing = np.all(diff <= 0)
 
             if not (is_increasing or is_decreasing):  # 如果既不是递增也不是递减
                 return True
