@@ -42,43 +42,63 @@
     \end{itemize}
 \end{frame}
 
+\begin{frame}{模拟参数设置}
+    \begin{itemize}
+        \item \textbf{模拟时间:} 模拟时间设置为$25000yr$，即$25000yr$后，即模拟的结果只保证在给定时间内不发生共振俘获，而不是不可能发生共振俘获。
+        \item \textbf{初始条件:} 初始条件设置为连个星体均位于x轴正方向。初速度设为轨道稳定速度。% 木星的轨道速度
+        \[v_{\text{Jupiter}} = \sqrt{\frac{G \cdot M_{\odot}}{a_{\text{Jupiter}}}}\]
+        
+        % 地球稳定轨道速度
+        \[v_{\text{Earth, stable}} = \sqrt{\frac{G \cdot M_{\odot}}{a_{\text{Earth}}}}\]
+        
+        \item \textbf{积分器:} 使用了RK45方法进行数值积分。
+        \item \textbf{积分器精度:} 积分器精度设置为$1e-8$。
+        \item \textbf{共振俘获的发生判断条件:} 共振俘获的发生条件是共振参数$\theta=(p+q)\lambda_\mathrm{out}-p\lambda_\mathrm{in}$有界。
+
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{输入数据展示}
+
+\end{frame}
+
+\begin{frame}{共振俘获的发生条件}
+    以下是计算中输入层设计的输入参数：
+    \begin{itemize}
+        \item \textbf{地球初速度偏移大小} (\(v_{\text{Earthbias}}\))：地球的初始速度和原设定的轨道稳定速度偏移范围，取值范围 \([0.0, 2.0]\)。
+        \item \textbf{地球初速度偏移方向角} (\(v_{\text{angle}}\))：角度以弧度计，均匀分布于 \([0, 2\pi)\)。
+        \item \textbf{headwind速度} (\(v_{\text{hw}}\))：eadwind速度取值范围 \([0.0, 0.5]\)。
+        \item \textbf{\(t_{\text{stop}}\)尺度} (\(t_{\text{stop}}\))：阻力对地球运行轨迹的影响，取值范围 \([50, 150]\)。
+    \end{itemize}
+\end{frame}
+
 \begin{frame}{并行策略}
     \begin{itemize}
-        \item \textbf{程序最大运行时间限制:} 每次模拟设置了最大运行时间5min，超过时间的模拟将被终止。可能存在一些模拟未能完成的情况，此时检查模拟的最后几个时间步的数据。
+        \item \textbf{程序最大运行时间限制:} 每次模拟设置了最大运行时间4min，超过时间的模拟将被终止。可能存在一些模拟未能完成的情况，此时直接丢弃这个模拟结果。
         \item \textbf{采用进程级并行:} 动力学模拟需要对微分方程进行数值积分，而数值积分通常具有强顺序性，本身难以并行计算。但是不同的初值之间没有关联性，可以很容易地实现并行。
         \item \textbf{部分初值下计算的严重超时问题:} 在部分初值设定下，能有的恶魔你情况会因为积分器的精度设定出现时间步长过短的情况。其运行时间会大大超过之前的设置上限。这时如果不及时地停止该进程的计算，可能会导致这种计算彻底占满计算资源。此时应该设计一种方法及时终止该进程。
-        \item 
+        \item \textbf{采用信号来进行进程终止:} 当一个进程超过了设定的时间限制，我们可以向该进程发送一个信号，让其自行终止。这样可以避免进程占满计算资源。这只能在linux系统下实现。
         
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Forbidden Mechanism in Spectroscopy}
+\begin{frame}{为什么选择神经网络模型}
 
+
+\end{frame}
+
+\begin{frame}{目前测试存在的不足}
     \begin{itemize}
-        \item \textbf{Definition:} A spectral line associated with photon absorption or emission by atomic nuclei, atoms, or molecules undergoing transitions not allowed by specific selection rules.
+        \item \textbf{最大时间步长限制:} 这会导致部分可以发生共振的初值模拟在规定时间步长内无法完成。这会过低估计共振俘获的发生可能性。
+        \item \textbf{最大运行时间限制:} 部分初值条件的模拟会因为积分器的精度设定出现时间步长过短的情况。这有可能是在共振俘获的发生条件下产生的，这会过低地共振俘获的发生可能性。
+        \item \textbf{数据量较小:} 动力学模拟计算成本很大，数据量较小。这使得数据集的完备性较差，这会导致神经网络模型的训练效果不佳。
+        \item \textbf{参数的覆盖范围仍不够:} 参数的覆盖范围仍不够，这会导致神经网络模型的泛化能力不足。
         
-        \item \textbf{Allowed Transitions:}
-            \begin{itemize}
-                \item Forbidden under usual approximations (e.g., electric dipole).
-                \item Allowed at higher approximation levels (e.g., magnetic dipole, electric quadrupole).
-            \end{itemize}
-        
-        \item \textbf{Transition Probabilities:}
-            \begin{itemize}
-                \item Most forbidden transitions are relatively unlikely.
-                \item Meta-stable states have lifetimes \textcolor{red}{on the order of $ms$ to $s$}.
-                \item Permitted transitions have lifetimes of \textcolor{red}{less than $1\mu s$}.
-            \end{itemize}
-        
-        \item \textbf{Astrophysical Forbidden Lines:}
-            \begin{itemize}
-                \item Forbidden lines of nitrogen ([N II] at 654.8 and 658.4 nm), sulfur ([S II] at 671.6 and 673.1 nm), and oxygen ([O II] at 372.7 nm, [O III] at 495.9 and 500.7 nm) are observed in astrophysical plasmas.
-                \item The presence of [O I] and [S II] forbidden lines in T-Tauri star spectra indicates \textcolor{red}{low gas density}.
-            \end{itemize}
     \end{itemize}
-\end{frame}
     
+
+
+\end{frame}
 
 
 \end{document}	% Done!

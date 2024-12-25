@@ -1,0 +1,8 @@
+\frametitle{共振俘获的发生条件}
+\setbeamercolor{background canvas}{bg=blue!5} % 背景色块
+\begin{itemize}
+    \item {\bf 地球初速度偏移大小:} $v_{\text{Earth\_bias}} \in [0.0, 2.0]$
+    \item {\bf 地球初速度偏移方向角:} $v_{\text{angle}} \in [0, 2\pi)$
+    \item {\bf headwind速度:} $v_{\text{hw}} \in [0.0, 0.5]$
+    \item {\bf $t_{\text{stop}}$尺度:} $t_{\text{stop}} \in [50, 150]$
+\end{itemize}

@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 class TimeoutException(Exception):
     """自定义超时异常"""
 
-@timeout_decorator.timeout(240, timeout_exception=TimeoutException)  # 默认超时时间30秒，可自行修改
+@timeout_decorator.timeout(480, timeout_exception=TimeoutException)  # 默认超时时间480秒，可自行修改
 def detect_resonance(v_earth, v_hw, v_angle, t_stop):
     """
     使用timeout_decorator来限制运行时间，若超时则抛出TimeoutException
@@ -15,8 +15,7 @@ def detect_resonance(v_earth, v_hw, v_angle, t_stop):
         result = _compute_resonance(v_earth, v_hw, v_angle, t_stop)
     except TimeoutException:
         logging.error("计算超时")
-        # 即使超时，仍然尝试进行共振检查
-        return _check_resonance(np.array([]))  # 可以传递空的结果作为默认，避免空数据的问题
+        return None  # 超时返回默认值
     except Exception as e:
         logging.error(f"计算错误: {e}")
         return None
@@ -74,7 +73,7 @@ def _compute_resonance(v_earth, v_hw, v_angle, t_stop):
         return [vx_j, vy_j, ax_j, ay_j, vx_e, vy_e, ax_e, ay_e]
 
     # 积分配置
-    t_span = (0, 250000)
+    t_span = (0, 35000)
     t_eval = np.linspace(*t_span, 500)
     sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-7, atol=1e-7, max_step=10)
 
@@ -92,25 +91,23 @@ def _analyze_solution(sol):
     T_e = a_e**1.5
     period_ratio = T_e / T_j
 
-    return _check_resonance(period_ratio)
+    return _check_resonance(period_ratio, sol)
 
-def _check_resonance(period_ratio):
+def _check_resonance(period_ratio, sol):
     """
-    检查周期比是否满足共振条件
+    检查最后 1000 年内的周期比是否满足共振条件
     """
     resonances = [2/1, 3/2, 5/3, 7/5]
-    tolerance = 0.03
+    tolerance = 0.25
+    tolerance = 0.25
+    final_time_window = 1000  # 最后1000年窗口
+
+    # 找到最后 1000 年的时间范围
+    final_indices = np.where(sol.t >= sol.t[-1] - final_time_window)[0]
+    final_period_ratios = period_ratio[final_indices]
 
     for res in resonances:
-        indices = np.where(np.abs(period_ratio - res) < tolerance)[0]
-        if len(indices) > 10:
-            nearby = period_ratio[indices]
-
-            # 检查是否非单调
-            diff = np.diff(nearby)
-            is_increasing = np.all(diff >= 0)
-            is_decreasing = np.all(diff <= 0)
-
-            if not (is_increasing or is_decreasing):  # 如果既不是递增也不是递减
-                return True
+        # 检查最后 1000 年内是否全部在容差范围内
+        if np.all(np.abs(final_period_ratios - res) < tolerance):
+            return True
     return False

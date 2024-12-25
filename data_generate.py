@@ -18,23 +18,24 @@ def process_combination(params):
 
 
 # 定义参数范围并生成参数组合
-param_v_earth = np.linspace(0.0, 2.0, 1)  # 4个均匀分布值，例如 [0.5, 1.0, 1.5, 2.0]
-param_v_hw = np.linspace(0.0, 0.5, 1)     # 4个均匀分布值，例如 [0.0, 0.1666, 0.3333, 0.5]
-param_v_angle = np.linspace(0.0, 2 * np.pi, 1, endpoint=False)  # 8个角度均匀分布
+param_v_earth = np.linspace(0.0, 2.0, 5)  # 4个均匀分布值，例如 [0.5, 1.0, 1.5, 2.0]
+param_v_hw = np.linspace(0.0, 2, 5)     # 4个均匀分布值，例如 [0.0, 0.1666, 0.3333, 0.5]
+param_v_angle = np.linspace(0.0, 2 * np.pi, 8, endpoint=False)  # 8个角度均匀分布
 param_t_stop = np.linspace(50, 150, 3)     # 阻力时间尺度 [50, 100, 150]
 
 param_combinations = list(product(param_v_earth, param_v_hw, param_v_angle, param_t_stop))
 
 
 # 保存结果为文件
-def save_results(results_dict, filename="resonance_results_4443.pkl"):
+def save_results(results_dict, filename="resonance_results_5583.pkl"):
     with open(filename, "wb") as f:
         pickle.dump(results_dict, f)
     print(f"结果已保存到文件: {filename}")
 
 
 # 加载结果文件
-def load_results(filename="resonance_results_4443.pkl"):
+def load_results(filename="resonance_results_5583"
+                          ".pkl"):
     with open(filename, "rb") as f:
         results_dict = pickle.load(f)
     return results_dict
