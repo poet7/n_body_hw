@@ -28,12 +28,14 @@ def _compute_resonance(v_earth, v_hw, v_angle, t_stop):
     """
     # 固定参数
     a_earth = 2.0
+    a_jupiter = 1.0
     M_jupiter = 1e-3
+    M_earth = 3e-6
+
 
     # 常量定义
     G = 4 * np.pi**2
     M_sun = 1.0
-    a_jupiter = 1.0
     v_jupiter = np.sqrt(G * M_sun / a_jupiter)
     v_earth_stable = np.sqrt(G * M_sun / a_earth)
 
@@ -56,8 +58,8 @@ def _compute_resonance(v_earth, v_hw, v_angle, t_stop):
         r_j = np.sqrt(x_j**2 + y_j**2)
         r_e = np.sqrt(x_e**2 + y_e**2)
 
-        ax_j = -G * M_sun * x_j / r_j**3
-        ay_j = -G * M_sun * y_j / r_j**3
+        ax_j = -G * M_sun * x_j / r_j ** 3 + G * M_earth * dx / r_je ** 3
+        ay_j = -G * M_sun * y_j / r_j ** 3 + G * M_earth * dy / r_je ** 3
         ax_e = -G * M_sun * x_e / r_e**3 - G * M_jupiter * dx / r_je**3
         ay_e = -G * M_sun * y_e / r_e**3 - G * M_jupiter * dy / r_je**3
 
@@ -73,7 +75,7 @@ def _compute_resonance(v_earth, v_hw, v_angle, t_stop):
         return [vx_j, vy_j, ax_j, ay_j, vx_e, vy_e, ax_e, ay_e]
 
     # 积分配置
-    t_span = (0, 35000)
+    t_span = (0, 30000)
     t_eval = np.linspace(*t_span, 500)
     sol = solve_ivp(equations, t_span, y0, t_eval=t_eval, rtol=1e-7, atol=1e-7, max_step=10)
 
